@@ -1,0 +1,2 @@
+# Lexa-native
+Private ai
