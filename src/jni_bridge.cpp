@@ -89,8 +89,6 @@ Java_com_press_ai_LlamaBridge_nativeLoadModel(JNIEnv* env, jobject, jstring jpat
 
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
-    mp.use_mmap     = true;
-    mp.use_mlock    = false;
 
     g_model = llama_model_load_from_file(path.c_str(), mp);
     if (!g_model) { LOGE("load failed: %s", path.c_str()); return JNI_FALSE; }
@@ -151,7 +149,7 @@ Java_com_press_ai_LlamaBridge_nativeGenerate(JNIEnv* env, jobject, jstring jprom
     llama_sampler_chain_add(smpl, llama_sampler_init_min_p(MIN_P, 1));
     llama_sampler_chain_add(smpl, llama_sampler_init_temp(TEMPERATURE));
     llama_sampler_chain_add(smpl, llama_sampler_init_penalties(
-        REPEAT_LAST_N, REPEAT_PENALTY, 0.0f, 0.0f));
+        llama_vocab_n_tokens(g_vocab), REPEAT_LAST_N, REPEAT_PENALTY, 0.0f, 0.0f));
     llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
     std::string out;
