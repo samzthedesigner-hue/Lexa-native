@@ -76,7 +76,7 @@ extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM*, void*) {
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_pres_ai_LlamaBridge_nativeLoadModel(JNIEnv* env, jobject, jstring jpath, jint params_millions) {
+Java_com_press_ai_LlamaBridge_nativeLoadModel(JNIEnv* env, jobject, jstring jpath, jint params_millions) {
     if (!jpath) return JNI_FALSE;
     const char* cpath = env->GetStringUTFChars(jpath, nullptr);
     std::string path = cpath ? cpath : "";
@@ -113,7 +113,7 @@ Java_com_pres_ai_LlamaBridge_nativeLoadModel(JNIEnv* env, jobject, jstring jpath
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_pres_ai_LlamaBridge_nativeGenerate(JNIEnv* env, jobject, jstring jprompt) {
+Java_com_press_ai_LlamaBridge_nativeGenerate(JNIEnv* env, jobject, jstring jprompt) {
     if (!jprompt) return env->NewStringUTF("");
 
     const char* cprompt = env->GetStringUTFChars(jprompt, nullptr);
@@ -133,7 +133,7 @@ Java_com_pres_ai_LlamaBridge_nativeGenerate(JNIEnv* env, jobject, jstring jpromp
         tokens.data(), (int)tokens.size(), true, true);
     if (n <= 0) return env->NewStringUTF("ERROR: tokenize failed");
 
-    llama_kv_cache_clear(g_ctx);
+    llama_memory_clear(llama_get_memory(g_ctx), true);
 
     if ((int)tokens.size() > g_n_ctx - 128) {
         int keep = g_n_ctx - 128;
@@ -180,7 +180,7 @@ Java_com_pres_ai_LlamaBridge_nativeGenerate(JNIEnv* env, jobject, jstring jpromp
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_pres_ai_LlamaBridge_nativeUnload(JNIEnv*, jobject) {
+Java_com_press_ai_LlamaBridge_nativeUnload(JNIEnv*, jobject) {
     std::lock_guard<std::mutex> lk(g_mutex);
     free_model_locked();
     LOGI("model unloaded");
