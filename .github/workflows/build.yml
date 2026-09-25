@@ -9,6 +9,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a]
 
     steps:
       - name: Checkout
@@ -26,14 +29,14 @@ jobs:
           sudo apt-get install -y cmake ninja-build
 
       - name: Clone llama.cpp
-        run: git clone --depth=1 https://github.com/ggerganov/llama.cpp
+        run: git clone --depth=1 https://github.com/ggml-org/llama.cpp
 
       - name: Configure
         run: |
           cmake -S src -B build \
             -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_ABI=${{ matrix.abi }} \
             -DANDROID_PLATFORM=android-24 \
             -DANDROID_ARM_NEON=ON \
             -DLLAMA_DIR=$PWD/llama.cpp \
@@ -45,24 +48,32 @@ jobs:
       - name: Package
         run: |
           mkdir -p out
-          cp build/libllama.so out/libllama.so
+          cp build/libllama.so out/libllama-${{ matrix.abi }}.so
           cd out
-          sha256sum libllama.so > libllama.so.sha256
+          sha256sum libllama-${{ matrix.abi }}.so > libllama-${{ matrix.abi }}.so.sha256
           ls -lh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: libllama-so
+          name: libllama-${{ matrix.abi }}
           path: out/*
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
       - name: Create Release
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Lexa Native v1.0.${{ github.run_number }}
-          files: |
-            out/libllama.so
-            out/libllama.so.sha256
+          files: out/*
           token: ${{ secrets.GITHUB_TOKEN }}
