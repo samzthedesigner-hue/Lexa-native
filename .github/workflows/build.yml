@@ -24,35 +24,20 @@ jobs:
           add-to-path: true
 
       - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build
-
+        run: | sudo apt-get update sudo apt-get install -y cmake ninja-build 
       - name: Clone llama.cpp
         run: git clone --depth=1 https://github.com/ggml-org/llama.cpp
 
-      - name: Configure
-        run: |
-          cmake -S src -B build \
-            -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-            -DANDROID_ABI=${{ matrix.abi }} \
-            -DANDROID_PLATFORM=android-24 \
-            -DANDROID_ARM_NEON=ON \
-            -DLLAMA_DIR=$PWD/llama.cpp \
-            -DCMAKE_BUILD_TYPE=Release
+      - name: Clone miniz
+        run: git clone --depth=1 https://github.com/richgel999/miniz src/third_party/miniz
 
+      - name: Configure
+        run: | cmake -S src -B build \ -G Ninja \ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \ -DANDROID_ABI=${{ matrix.abi }} \ -DANDROID_PLATFORM=android-24 \ -DANDROID_ARM_NEON=ON \ -DLLAMA_DIR=$PWD/llama.cpp \ -DCMAKE_BUILD_TYPE=Release 
       - name: Build
         run: cmake --build build -j
 
       - name: Package
-        run: |
-          mkdir -p out
-          cp build/libllama.so out/libllama-${{ matrix.abi }}.so
-          cd out
-          sha256sum libllama-${{ matrix.abi }}.so > libllama-${{ matrix.abi }}.so.sha256
-          ls -lh
-
+        run: | mkdir -p out cp build/libllama.so out/libllama-${{ matrix.abi }}.so cd out sha256sum libllama-${{ matrix.abi }}.so > libllama-${{ matrix.abi }}.so.sha256 ls -lh 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
